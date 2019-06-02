@@ -8,5 +8,5 @@ Allows banned players to join the game, but everything they do is in vain. Quiet
 Please see [mcbbs](http://www.mcbbs.net/thread-870745-1-1.html) for more information.
 ## Commands
 | Command | Permission | Description | Default |
-| - | - | - | - | - |
+| - | - | - | - |
 | /crash <player> | sanctioner.crash | Crashs the player's client | OP |
