@@ -1,0 +1,12 @@
+main: cn.wode490390.nukkit.sanctioner.Sanctioner
+name: "Sanctioner"
+description: "Sanctioner plugin for Nukkit"
+author: "wode490390"
+website: "http://wode490390.cn/"
+version: "${pom.version}"
+api: ["1.0.0"]
+load: POSTWORLD
+permissions:
+  sanctioner.crash:
+    description: "Allows player to use /crash"
+    default: op
