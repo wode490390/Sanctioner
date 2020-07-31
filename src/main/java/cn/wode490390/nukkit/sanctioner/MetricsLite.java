@@ -10,12 +10,13 @@ import com.google.common.base.Preconditions;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+
+import javax.net.ssl.HttpsURLConnection;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -29,7 +30,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
 import java.util.zip.GZIPOutputStream;
-import javax.net.ssl.HttpsURLConnection;
 
 /**
  * bStats collects some data for plugin authors.
@@ -76,14 +76,20 @@ public class MetricsLite {
     // The plugin
     private final Plugin plugin;
 
+    // The plugin id
+    private final int pluginId;
+
     /**
      * Class constructor.
      *
      * @param plugin The plugin which stats should be submitted.
+     * @param pluginId The id of the plugin.
+     *                 It can be found at <a href="https://bstats.org/what-is-my-plugin-id">What is my plugin id?</a>
      */
-    public MetricsLite(Plugin plugin) {
+    public MetricsLite(Plugin plugin, int pluginId) {
         Preconditions.checkNotNull(plugin);
         this.plugin = plugin;
+        this.pluginId = pluginId;
 
         // Get the config file
         File bStatsFolder = new File(plugin.getDataFolder().getParentFile(), "bStats");
@@ -192,6 +198,7 @@ public class MetricsLite {
         String pluginVersion = plugin.getDescription().getVersion();
 
         data.addProperty("pluginName", pluginName); // Append the name of the plugin
+        data.addProperty("id", pluginId); // Append the id of the plugin
         data.addProperty("pluginVersion", pluginVersion); // Append the version of the plugin
 
         JsonArray customCharts = new JsonArray();
@@ -210,6 +217,7 @@ public class MetricsLite {
         int playerAmount = Server.getInstance().getOnlinePlayers().size();
         int onlineMode = Server.getInstance().getPropertyBoolean("xbox-auth", false) ? 1 : 0;
         String minecraftVersion = Server.getInstance().getVersion();
+        String softwareName = Server.getInstance().getName();
 
         // OS/Java specific data
         String javaVersion = System.getProperty("java.version");
@@ -225,6 +233,7 @@ public class MetricsLite {
         data.addProperty("playerAmount", playerAmount);
         data.addProperty("onlineMode", onlineMode);
         data.addProperty("bukkitVersion", minecraftVersion);
+        data.addProperty("bukkitName", softwareName);
 
         data.addProperty("javaVersion", javaVersion);
         data.addProperty("osName", osName);
@@ -305,7 +314,7 @@ public class MetricsLite {
             throw new IllegalAccessException("This method must not be called from the main thread!");
         }
         if (logSentData) {
-            plugin.getLogger().info("Sending data to bStats: " + data.toString());
+            plugin.getLogger().info("Sending data to bStats: " + data);
         }
         HttpsURLConnection connection = (HttpsURLConnection) new URL(URL).openConnection();
 
@@ -325,20 +334,18 @@ public class MetricsLite {
         connection.setDoOutput(true);
         try (DataOutputStream outputStream = new DataOutputStream(connection.getOutputStream())) {
             outputStream.write(compressedData);
-            outputStream.flush();
         }
 
-        InputStream inputStream = connection.getInputStream();
-        StringBuilder builder;
-        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))) {
-            builder = new StringBuilder();
+        StringBuilder builder = new StringBuilder();
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
             String line;
             while ((line = bufferedReader.readLine()) != null) {
                 builder.append(line);
             }
         }
+
         if (logResponseStatusText) {
-            plugin.getLogger().info("Sent data to bStats and received response: " + builder.toString());
+            plugin.getLogger().info("Sent data to bStats and received response: " + builder);
         }
     }
 

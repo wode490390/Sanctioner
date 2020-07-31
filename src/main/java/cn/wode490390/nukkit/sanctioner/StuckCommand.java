@@ -7,17 +7,25 @@ import cn.nukkit.command.PluginIdentifiableCommand;
 import cn.nukkit.command.data.CommandParamType;
 import cn.nukkit.command.data.CommandParameter;
 import cn.nukkit.lang.TranslationContainer;
-import cn.nukkit.network.protocol.MovePlayerPacket;
+import cn.nukkit.level.Level;
+import cn.nukkit.network.protocol.ChangeDimensionPacket;
 import cn.nukkit.plugin.Plugin;
 import cn.nukkit.utils.TextFormat;
 
-public class CrashCommand extends Command implements PluginIdentifiableCommand {
+public class StuckCommand extends Command implements PluginIdentifiableCommand {
+
+    private static final ChangeDimensionPacket STUCK_PACKET = new ChangeDimensionPacket();
+
+    static {
+        STUCK_PACKET.dimension = Level.DIMENSION_OVERWORLD;
+        STUCK_PACKET.encode();
+    }
 
     private final Plugin plugin;
 
-    public CrashCommand(Plugin plugin) {
-        super("crash", "Crashs the player's client", "/crash <player>");
-        this.setPermission("sanctioner.crash");
+    public StuckCommand(Plugin plugin) {
+        super("stuck", "Stucks the player's client", "/stuck <player>");
+        this.setPermission("sanctioner.stuck");
         this.getCommandParameters().clear();
         this.addCommandParameters("default", new CommandParameter[]{
                 new CommandParameter("player", CommandParamType.TARGET, false)
@@ -34,13 +42,9 @@ public class CrashCommand extends Command implements PluginIdentifiableCommand {
         if (args.length > 0) {
             Player player = plugin.getServer().getPlayer(args[0]);
             if (player != null) {
-                MovePlayerPacket pk = new MovePlayerPacket();
-                pk.eid = player.getId();
-                pk.x = pk.y = pk.z = Float.MAX_VALUE;
-                pk.mode = MovePlayerPacket.MODE_TELEPORT;
-                player.dataPacket(pk);
+                player.dataPacket(STUCK_PACKET);
 
-                Command.broadcastCommandMessage(sender, TextFormat.YELLOW + "Successfully crashed " + args[0] + "'s client");
+                Command.broadcastCommandMessage(sender, TextFormat.YELLOW + "Successfully stuck " + args[0] + "'s client");
             } else {
                 sender.sendMessage("No targets matched selector");
             }
